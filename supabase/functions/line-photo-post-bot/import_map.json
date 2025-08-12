@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@line/bot-sdk": "https://esm.sh/@line/bot-sdk@9.3.0"
+  }
+}
