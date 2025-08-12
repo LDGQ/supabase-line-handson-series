@@ -38,7 +38,7 @@ export async function ensureUser(lineUserId: string): Promise<string | null> {
   let newUid: string | undefined;
   try {
     const { data: newUser, error: createError } = await supabaseAdmin!.auth.admin.createUser({
-      email: `${lineUserId}@line.liff`,
+      email: `${lineUserId}@line.user`,
       password: crypto.randomUUID(),
       email_confirm: true,
       user_metadata: { line_user_id: lineUserId },
@@ -46,7 +46,7 @@ export async function ensureUser(lineUserId: string): Promise<string | null> {
     if (createError) {
       console.error("createUser error", createError.message);
       const { data: existingUser } = await supabaseAdmin!.auth.admin.listUsers({
-        email: `${lineUserId}@line.liff`,
+        email: `${lineUserId}@line.user`,
         limit: 1,
       });
       newUid = existingUser?.users?.[0]?.id;
