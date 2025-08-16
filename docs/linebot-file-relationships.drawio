@@ -1,0 +1,157 @@
+<mxfile host="65bd71144e">
+    <diagram id="linebot-structure" name="LINE Bot File Relationships">
+        <mxGraphModel dx="1260" dy="419" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="900" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="index-ts" value="index.ts&#10;(Webhook受信エントリーポイント)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="40" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="image-handler" value="imageHandler.ts&#10;(画像メッセージ処理)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="160" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="location-handler" value="locationHandler.ts&#10;(位置情報メッセージ処理)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="160" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="text-handler" value="textHandler.ts&#10;(テキストメッセージ処理)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="160" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="user-service" value="userService.ts&#10;(ユーザー管理サービス)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="205" y="290" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="session-service" value="sessionService.ts&#10;(セッション状態管理)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="355" y="290" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="storage-service" value="storageService.ts&#10;(ファイルストレージ管理)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="55" y="290" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="line-messaging-service" value="lineMessagingService.ts&#10;(LINE Bot SDK ラッパー)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="290" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="supabase-client" value="supabaseClient.ts&#10;(データベースクライアント)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="420" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="flex-messages" value="flex/*.ts&#10;(Flexメッセージ構築)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="420" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="flex-start-guide" value="buildStartPostGuideFlex.ts&#10;(投稿開始ガイド)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="420" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="flex-photo-received" value="buildPhotoReceivedFlex.ts&#10;(写真受信メッセージ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="420" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="quick-replies" value="quickReplies.ts&#10;(クイックリプライボタン)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="420" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-machine" value="セッション状態遷移" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="520" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-photo-pending" value="photo_pending&#10;(写真待ち)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="65" y="575" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-gps-pending" value="gps_pending&#10;(位置情報待ち)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="265" y="575" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-comment-pending" value="comment_pending&#10;(コメント待ち)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="465" y="575" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-completed" value="completed&#10;(完了)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="665" y="575" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge1" style="strokeColor=#000000;" parent="1" source="index-ts" target="text-handler" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge2" style="strokeColor=#000000;" parent="1" source="index-ts" target="image-handler" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge3" style="strokeColor=#000000;" parent="1" source="index-ts" target="location-handler" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge4" style="strokeColor=#000000;" parent="1" source="text-handler" target="user-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge5" style="strokeColor=#000000;" parent="1" source="text-handler" target="session-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge6" style="strokeColor=#000000;" parent="1" source="text-handler" target="line-messaging-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge7" style="strokeColor=#000000;" parent="1" source="image-handler" target="user-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge8" style="strokeColor=#000000;" parent="1" source="image-handler" target="session-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge9" style="strokeColor=#000000;" parent="1" source="image-handler" target="storage-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge10" style="strokeColor=#000000;" parent="1" source="image-handler" target="line-messaging-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge11" style="strokeColor=#000000;" parent="1" source="location-handler" target="user-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge12" style="strokeColor=#000000;" parent="1" source="location-handler" target="session-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge13" style="strokeColor=#000000;" parent="1" source="location-handler" target="line-messaging-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge14" style="strokeColor=#000000;" parent="1" source="user-service" target="supabase-client" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge15" style="strokeColor=#000000;" parent="1" source="session-service" target="supabase-client" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge16" style="strokeColor=#000000;" parent="1" source="storage-service" target="supabase-client" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge17" style="strokeColor=#000000;" parent="1" source="line-messaging-service" target="quick-replies" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge18" style="strokeColor=#000000;" parent="1" source="line-messaging-service" target="flex-messages" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge19" style="strokeColor=#000000;" parent="1" source="line-messaging-service" target="flex-start-guide" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge20" style="strokeColor=#000000;" parent="1" source="line-messaging-service" target="flex-photo-received" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-edge1" value="画像受信" style="strokeColor=#000000;labelBackgroundColor=#ffffff;fontColor=#000000;" parent="1" source="state-photo-pending" target="state-gps-pending" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-edge2" value="位置情報受信" style="strokeColor=#000000;labelBackgroundColor=#ffffff;fontColor=#000000;" parent="1" source="state-gps-pending" target="state-comment-pending" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="state-edge3" value="コメント追加" style="strokeColor=#000000;labelBackgroundColor=#ffffff;fontColor=#000000;" parent="1" source="state-comment-pending" target="state-completed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="680" width="380" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-title" value="凡例 (Legend)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=14;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="690" width="100" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-entry" value="エントリーポイント (紫)&lt;br&gt;Webhook受信" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="720" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-handlers" value="ハンドラー (緑)&lt;br&gt;メッセージ処理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="720" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-services" value="サービス (青)&lt;br&gt;ビジネスロジック" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="770" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-messages" value="メッセージ (黄)&lt;br&gt;メッセージ構築" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="770" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-utils" value="ユーティリティ (灰)&lt;br&gt;共通機能" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6e6e6;strokeColor=#666666;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="820" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-solid" value="実線: 直接的な依存関係" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="827.5" width="150" height="25" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

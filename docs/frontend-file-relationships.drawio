@@ -1,0 +1,124 @@
+<mxfile host="65bd71144e">
+    <diagram id="frontend-structure" name="Frontend File Relationships">
+        <mxGraphModel dx="1240" dy="1152" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="app-layout" value="layout.tsx&#10;(Next.js App Layout)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="20" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-page" value="page.tsx&#10;(Main App Page)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="140" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="post-list" value="PostList.tsx&#10;(Post List Component)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="250" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="post-card" value="PostCard.tsx&#10;(Post Card Component)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="375" y="250" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="use-line-auth" value="useLineUserAuth.ts&#10;(LINE Auth Hook)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="350" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="use-post" value="usePost.ts&#10;(Post Data Hook)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="350" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="liff-service" value="liffService.ts&#10;(LIFF SDK Service)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="490" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="post-service" value="postService.ts&#10;(Post Data Service)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="450" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="supabase-auth" value="supabaseAuthService.ts&#10;(Supabase Auth Service)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="540" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="supabase-client" value="supabaseClient.ts&#10;(Supabase Client)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="630" y="450" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="line-auth-provider" value="LineAuthProvider.ts&#10;(LINE Auth Provider)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="620" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-factory" value="AuthFactory.ts&#10;(Auth Provider Factory)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="620" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="i-auth-provider" value="IAuthProvider.ts&#10;(Auth Provider Interface)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="700" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge1" style="strokeColor=#000000;" parent="1" source="app-layout" target="app-page" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge2" style="strokeColor=#000000;" parent="1" source="app-page" target="post-list" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge3" style="strokeColor=#000000;" parent="1" source="app-page" target="use-line-auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge4" style="strokeColor=#000000;" parent="1" source="post-list" target="use-line-auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge5" style="strokeColor=#000000;" parent="1" source="post-list" target="use-post" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge6" style="strokeColor=#000000;" parent="1" source="post-list" target="post-card" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge7" value="画像を取得" style="strokeColor=#000000;labelBackgroundColor=#ffffff;fontColor=#000000;" parent="1" source="post-card" target="post-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge8" style="strokeColor=#000000;" parent="1" source="use-line-auth" target="line-auth-provider" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge9" style="strokeColor=#000000;" parent="1" source="use-line-auth" target="liff-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge10" value="投稿情報" style="strokeColor=#000000;labelBackgroundColor=#ffffff;fontColor=#000000;" parent="1" source="use-post" target="post-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge11" style="strokeColor=#000000;" parent="1" source="line-auth-provider" target="liff-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge12" value="ログイン情報" style="strokeColor=#000000;labelBackgroundColor=#ffffff;fontColor=#000000;" parent="1" source="line-auth-provider" target="supabase-auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge13" style="strokeColor=#000000;" parent="1" source="post-service" target="supabase-client" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge14" style="strokeColor=#000000;" parent="1" source="supabase-auth" target="supabase-client" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge15" style="strokeColor=#000000;" parent="1" source="auth-factory" target="line-auth-provider" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge16" style="strokeColor=#000000;" parent="1" source="line-auth-provider" target="i-auth-provider" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="790" width="760" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-title" value="凡例 (Legend)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=14;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="800" width="100" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-app" value="App Layer (purple)&lt;br&gt;Next.js アプリの基本構造" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="830" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-components" value="Components (green)&lt;br&gt;React コンポーネント" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="830" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-hooks" value="Hooks (yellow)&lt;br&gt;カスタムフック" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="830" width="150" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-services" value="Services (blue)&lt;br&gt;ビジネスロジック" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="830" width="160" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-providers" value="Providers (red)&lt;br&gt;認証プロバイダー" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="870" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-types" value="Types/Utils (gray)&lt;br&gt;型定義・ユーティリティ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6e6e6;strokeColor=#666666;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="870" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-solid" value="実線: 直接的な依存関係" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="470" y="870" width="150" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
