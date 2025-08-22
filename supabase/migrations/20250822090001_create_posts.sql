@@ -1,7 +1,7 @@
 -- posts テーブル
 create table if not exists public.posts (
   id         uuid primary key default gen_random_uuid(),
-  user_id    uuid not null references auth.users(id),
+  user_id    uuid not null references public.users(id),
 
   comment    text,
   latitude   numeric not null,

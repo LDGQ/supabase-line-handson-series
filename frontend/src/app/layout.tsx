@@ -1,13 +1,13 @@
-// ハンズオン1-2: Next.js プロジェクトの基本レイアウト
-// Vercel デプロイ対応の LIFF × Supabase アプリケーション
 import './globals.css';
 import { Inter } from 'next/font/google';
+import { AuthProvider } from '../contexts/AuthContext';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'LIFF × Supabase App',
-  description: 'LIFF and Supabase integration example',
+  title: 'LINE Photo Post',
+  description: 'LINE LIFF photo posting app',
 };
 
 export default function RootLayout({
@@ -21,7 +21,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
-        {children}
+        <ErrorBoundary>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

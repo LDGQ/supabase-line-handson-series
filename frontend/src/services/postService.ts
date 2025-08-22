@@ -1,6 +1,5 @@
-// ハンズオン3-4: 投稿データサービス
-// Supabase からの投稿データ取得・更新・削除機能
 import { supabase } from './supabaseClient';
+import { User } from '@supabase/supabase-js';
 import { Post } from '../types/database';
 import { AuthError } from '../lib/error';
 
@@ -14,9 +13,7 @@ export interface PostUpdateData {
 
 export class PostService {
   private static instance: PostService;
-
-  // 定数
-  private static readonly SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 30; // 30日間
+  private static readonly SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 30;
   private static readonly POST_IMAGES_BUCKET = 'post-images';
 
   private constructor() {}
@@ -28,31 +25,53 @@ export class PostService {
     return PostService.instance;
   }
 
-  // ハンズオン3-4: 投稿データ取得
-  // データベースから現在のユーザーの投稿一覧を取得
-  async getPosts(): Promise<Post[]> {
-    return this.executeWithAuth(async (user) => {
+  async getPosts(user?: User): Promise<Post[]> {
+    return this.executeWithAuth(async (user: User) => {
       const { data, error } = await supabase
         .from('posts')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+
       if (error) {
-        throw new AuthError(`投稿の取得に失敗しました: ${error.message}`, error.code);
+        throw new AuthError(`投稿の取得に失敗しました: ${error?.message || 'Unknown error'}`, error?.code);
       }
 
-      return data || [];
-    }, '投稿の取得に失敗しました');
+      // 自分の投稿のみフィルタリング
+      const myPosts = data?.filter(post => post.user_id === user.id) || [];
+      const postsWithUserInfo = await Promise.all(
+        myPosts.map(async (post) => {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('display_name, avatar_url')
+            .eq('id', post.user_id)
+            .single();
+
+          if (!userError && userData) {
+            return {
+              ...post,
+              user: userData
+            };
+          }
+
+          return {
+            ...post,
+            user: null
+          };
+        })
+      );
+
+      return postsWithUserInfo;
+    }, '投稿の取得に失敗しました', user);
   }
 
-  async updatePost(id: string, updates: PostUpdateData): Promise<Post> {
-    return this.executeWithAuth(async (user) => {
+  async updatePost(id: string, updates: PostUpdateData, user?: User): Promise<Post> {
+    return this.executeWithAuth(async (user: User) => {
       const { data, error } = await supabase
         .from('posts')
         .update(updates)
         .eq('id', id)
-        .eq('user_id', user.id) // 自分の投稿のみ更新可能
+        .eq('user_id', user.id)
         .select();
 
       if (error) {
@@ -64,70 +83,50 @@ export class PostService {
       }
 
       return data[0];
-    }, '投稿の更新に失敗しました');
+    }, '投稿の更新に失敗しました', user);
   }
 
-  async deletePost(id: string): Promise<void> {
-    return this.executeWithAuth(async (user) => {
+  async deletePost(id: string, user?: User): Promise<void> {
+    return this.executeWithAuth(async (user: User) => {
       const { error } = await supabase
         .from('posts')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id); // 自分の投稿のみ削除可能
+        .eq('user_id', user.id);
 
       if (error) {
         throw new AuthError(`投稿の削除に失敗しました: ${error.message}`, error.code);
       }
-    }, '投稿の削除に失敗しました');
+    }, '投稿の削除に失敗しました', user);
   }
 
-  // ハンズオン3-5: Storage 画像URL処理
-  // ストレージパスから署名付きURLを生成して画像を表示
   async getImageUrl(imageUrl: string): Promise<string | null> {
-    try {
-      // null または空文字の場合はnullを返す
-      if (!imageUrl || imageUrl.trim() === '') {
-        return null;
-      }
-
-      // 既に完全なURLの場合はそのまま返す
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        // 署名付きURLの場合は期限切れの可能性があるので再生成を試行
-        if (imageUrl.includes('token=')) {
-          const refreshed = await this.refreshSignedUrl(imageUrl);
-          if (refreshed) {
-            return refreshed;
-          } else {
-            return imageUrl;
-          }
-        }
-
-        // 通常のURLの場合はそのまま返す
-        return imageUrl;
-      }
-
-      // ストレージパスの場合は署名付きURLを生成
-      return await this.createSignedUrl(imageUrl);
-    } catch (error) {
-      console.error('画像URLの取得に失敗しました:', error);
-      // エラーが発生した場合はnullを返す（エラーを投げない）
+    if (!imageUrl || imageUrl.trim() === '') {
       return null;
     }
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      if (imageUrl.includes('token=')) {
+        const refreshed = await this.refreshSignedUrl(imageUrl);
+        if (refreshed) {
+          return refreshed;
+        } else {
+          return imageUrl;
+        }
+      }
+
+      return imageUrl;
+    }
+
+    return await this.createSignedUrl(imageUrl);
   }
 
-  /**
-   * パブリックURLが利用可能かチェックし、利用可能な場合は返す
-   */
   private async tryPublicUrl(bucketName: string, objectPath: string): Promise<string | null> {
     const { data: pub } = supabase.storage.from(bucketName).getPublicUrl(objectPath);
     if (pub?.publicUrl) {
-      try {
-        const headResponse = await fetch(pub.publicUrl, { method: 'HEAD' });
-        if (headResponse.ok) {
-          return pub.publicUrl;
-        }
-      } catch (error) {
-        // パブリックURLチェックに失敗した場合は署名付きURLを試行
+      const headResponse = await fetch(pub.publicUrl, { method: 'HEAD' });
+      if (headResponse.ok) {
+        return pub.publicUrl;
       }
     }
     return null;
@@ -152,18 +151,15 @@ export class PostService {
       .createSignedUrl(objectPath, PostService.SIGNED_URL_EXPIRY_SECONDS);
 
     if (error) {
-      console.error('署名付きURLの生成に失敗:', error.message);
 
       // ファイルが存在しない場合や権限エラーの場合はnullを返す
       if (this.isStorageErrorRecoverable(error.message)) {
-        console.warn('画像ファイルが見つからないか、アクセス権限がありません:', objectPath);
         return null;
       }
       return null;
     }
 
     if (!signed?.signedUrl) {
-      console.warn('署名付きURLの生成に失敗: signedUrlがnull');
       return null;
     }
 
@@ -174,28 +170,22 @@ export class PostService {
    * ストレージパスから署名付きURLを生成
    */
   private async createSignedUrl(storagePath: string): Promise<string | null> {
-    try {
-      const pathParts = storagePath.split('/');
-      if (pathParts.length < 2) {
-        console.warn('無効なストレージパス:', storagePath);
-        return null;
-      }
-
-      const bucketName = pathParts[0];
-      const objectPath = pathParts.slice(1).join('/');
-
-      // まずパブリックURLを試行
-      const publicUrl = await this.tryPublicUrl(bucketName, objectPath);
-      if (publicUrl) {
-        return publicUrl;
-      }
-
-      // パブリックURLが利用できない場合は署名付きURLを生成
-      return await this.generateSignedUrl(bucketName, objectPath);
-    } catch (error) {
-      console.error('createSignedUrlでエラーが発生:', error);
+    const pathParts = storagePath.split('/');
+    if (pathParts.length < 2) {
       return null;
     }
+
+    const bucketName = pathParts[0];
+    const objectPath = pathParts.slice(1).join('/');
+
+    // まずパブリックURLを試行
+    const publicUrl = await this.tryPublicUrl(bucketName, objectPath);
+    if (publicUrl) {
+      return publicUrl;
+    }
+
+    // パブリックURLが利用できない場合は署名付きURLを生成
+    return await this.generateSignedUrl(bucketName, objectPath);
   }
 
   /**
@@ -217,27 +207,34 @@ export class PostService {
       // 新しい署名付き URL
       return await this.generateSignedUrl(PostService.POST_IMAGES_BUCKET, objectPath);
     } catch (error) {
-      console.error('署名付きURLの更新に失敗しました:', error);
       return null;
     }
   }
 
   // ユーティリティメソッド
   /**
-   * ユーザー認証とエラーハンドリングを共通化したプライベートメソッド
+   * ユーザー認証とエラーハンドリングを共通化したメソッド
+   * Note: AuthContextのuseAuth hookを使用するには、このサービスをコンポーネント内で呼び出す必要がある
    */
-  private async executeWithAuth<T>(
-    operation: (user: any) => Promise<T>,
-    errorMessage: string
+  async executeWithAuth<T>(
+    operation: (user: User) => Promise<T>,
+    errorMessage: string,
+    user?: User
   ): Promise<T> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        throw new AuthError('ユーザー認証に失敗しました', 'AUTH_ERROR');
+      // ユーザー情報が渡された場合はそれを使用
+      if (user) {
+        return await operation(user);
       }
 
-      return await operation(user);
+      // フォールバック: Supabaseの標準認証を試行
+      const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser();
+
+      if (supabaseUser && !userError) {
+        return await operation(supabaseUser);
+      }
+
+      throw new AuthError('ユーザー認証に失敗しました', 'AUTH_ERROR');
     } catch (err) {
       if (err instanceof AuthError) {
         throw err;

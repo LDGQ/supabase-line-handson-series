@@ -1,4 +1,4 @@
-// ハンズオン3-3: Supabase クライアント設定
+// Supabase クライアント設定
 // データベースと認証サービスへの接続設定
 import { createClient } from '@supabase/supabase-js';
 

@@ -1,28 +1,16 @@
 "use client";
-
-// ハンズオン3-4: 投稿一覧コンポーネント
-// ユーザーの投稿データを一覧表示し、カード形式で表示
-import { useLineUserAuth } from '../hooks/useLineUserAuth';
-import { usePost } from '../hooks/usePost';
+import { useApp } from '../hooks/useApp';
 import PostCard from './PostCard';
 import { AuthError } from '../lib/error';
 
 export default function PostList() {
-  const { user, loading: isAuthLoading } = useLineUserAuth();
-  const { posts, loading: isPostLoading, error, updatePost, deletePost, refreshPosts } = usePost();
-
-  if (isAuthLoading || isPostLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-2 text-gray-600 text-sm">
-            {isAuthLoading ? '認証情報を確認中...' : '投稿を読み込み中...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const { 
+    user, 
+    posts, 
+    error,
+    updatePost, 
+    deletePost 
+  } = useApp();
 
   if (error) {
     const isAuthError = error instanceof AuthError;
@@ -51,23 +39,12 @@ export default function PostList() {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
-      {/* ヘッダー部分 */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">マイ投稿</h2>
-        </div>
-        <button
-          onClick={refreshPosts}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
-        >
-          更新
-        </button>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">マイ投稿</h2>
       </div>
 
-      {/* 投稿一覧 */}
       {posts.length === 0 ? (
         <div className="text-center py-12">
           <div className="bg-gray-100 rounded-lg p-8 max-w-md mx-auto">
@@ -84,7 +61,6 @@ export default function PostList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* ハンズオン3-4: PostCard コンポーネントの使用 */}
           {posts.map((post) => (
             <PostCard 
               key={post.id} 
@@ -95,13 +71,6 @@ export default function PostList() {
           ))}
         </div>
       )}
-
-      {/* 投稿数表示 */}
-      {/* {posts.length > 0 && (
-        <div className="text-center text-gray-500 text-sm">
-          合計 {posts.length} 件の投稿
-        </div>
-      )} */}
     </div>
   );
 } 

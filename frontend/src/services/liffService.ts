@@ -1,4 +1,4 @@
-// ハンズオン2-4: LIFF サービス
+// LIFF サービス
 // LINE Front-end Framework の初期化と認証管理
 import { Liff } from '@line/liff';
 
@@ -27,7 +27,7 @@ export class LiffService {
     return LiffService.instance;
   }
 
-  // ハンズオン2-4: LIFF 初期化処理
+  // LIFF 初期化処理
   // LINE Developers で作成した LIFF ID を使用してSDKを初期化
   async initialize(config: LiffConfig): Promise<Liff> {
     if (this.liff) {
@@ -63,7 +63,7 @@ export class LiffService {
     }
   }
 
-  // ハンズオン2-4: ID トークン取得
+  // ID トークン取得
   // LINE ログインで取得したIDトークンを返す（Supabase認証で使用）
   async getIdToken(): Promise<string | null> {
     if (!this.liff) {
@@ -102,7 +102,9 @@ export class LiffService {
 
   // Is系メソッド
   isLoggedIn(): boolean {
-    return this.liff?.isLoggedIn() ?? false;
+    const hasLiff = !!this.liff;
+    const loggedIn = this.liff?.isLoggedIn() ?? false;
+    return loggedIn;
   }
 
   isInitialized(): boolean {
@@ -148,32 +150,28 @@ export class LiffService {
       return false;
     }
 
-    try {
-      const currentLoginStatus = this.liff.isLoggedIn();
-      
-      if (!currentLoginStatus) {
-        this.login();
+    const currentLoginStatus = this.liff.isLoggedIn();
+    
+    if (!currentLoginStatus) {
+      this.login();
+      return false;
+    }
+    
+    const token = this.liff.getIDToken();
+    
+    if (token) {
+      const tokenInfo = this.validateToken(token);
+      if (tokenInfo.isExpired) {
+        this.logout();
+        setTimeout(() => {
+          this.login();
+        }, 100);
         return false;
       }
       
-      const token = this.liff.getIDToken();
-      
-      if (token) {
-        const tokenInfo = this.validateToken(token);
-        if (tokenInfo.isExpired) {
-          this.logout();
-          setTimeout(() => {
-            this.login();
-          }, 100);
-          return false;
-        }
-        
-        return true;
-      } else {
-        this.login();
-        return false;
-      }
-    } catch (error) {
+      return true;
+    } else {
+      this.login();
       return false;
     }
   }
@@ -205,57 +203,43 @@ export class LiffService {
       return null;
     }
 
-    try {
-      const token = this.liff.getIDToken();
-      
-      if (token) {
-        return token;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      return null;
-    }
+    return this.liff.getIDToken();
   }
 
   // ユーティリティメソッド
   private clearOldCache(resetInstance: boolean = true): void {
-    try {
-      // 1. localStorage のクリア
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.includes('liff') || 
-          key.includes('line') || 
-          key.includes('auth') ||
-          key.includes('supabase') ||
-          key.includes('sb-')
-        )) {
-          keysToRemove.push(key);
-        }
+    // 1. localStorage のクリア
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.includes('liff') || 
+        key.includes('line') || 
+        key.includes('auth') ||
+        key.includes('supabase') ||
+        key.includes('sb-')
+      )) {
+        keysToRemove.push(key);
       }
-      
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-      });
-      
-      // 2. sessionStorage のクリア
-      sessionStorage.clear();
-      
-      // 3. LIFFインスタンスのリセット（条件付き）
-      if (resetInstance && this.liff) {
-        this.liff = null;
-      }
-      
-      // 4. クッキーのクリア（LIFF関連）
-      this.clearCookies();
-      
-      // 5. IndexedDBのクリア（存在する場合）
-      this.clearIndexedDB();
-    } catch (error) {
-      // エラーは無視
     }
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // 2. sessionStorage のクリア
+    sessionStorage.clear();
+    
+    // 3. LIFFインスタンスのリセット（条件付き）
+    if (resetInstance && this.liff) {
+      this.liff = null;
+    }
+    
+    // 4. クッキーのクリア（LIFF関連）
+    this.clearCookies();
+    
+    // 5. IndexedDBのクリア（存在する場合）
+    this.clearIndexedDB();
   }
 
   // 手動キャッシュクリア用のパブリックメソッド

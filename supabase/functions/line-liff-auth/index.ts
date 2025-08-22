@@ -4,7 +4,6 @@
 // LINE ID トークンを検証し、Supabase セッションを作成するための認証機能
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient, User } from 'https://esm.sh/@supabase/supabase-js@2';
-import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts';
 
 // 型定義
 interface LineProfile {
@@ -16,24 +15,17 @@ interface LineProfile {
 
 interface Environment {
   LINE_CHANNEL_ID: string;
-  EDGE_FUNCTION_JWT: string;
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
-interface Session {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  expires_at: number;
-}
-
 interface UserResponse {
-  session: Session;
   user: {
     id: string;
     email: string;
     user_metadata: Record<string, unknown>;
+    aud: string;
+    role: string;
   };
 }
 
@@ -45,11 +37,6 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-const JWT_CONFIG = {
-  ACCESS_TOKEN_EXPIRY: '24h',
-  REFRESH_TOKEN_EXPIRY: '30d',
-  EXPIRES_IN_SECONDS: 86400 // 24時間（秒）
-};
 
 // ユーティリティ関数
 class ApiError extends Error {
@@ -81,7 +68,6 @@ const createResponse = (data: unknown, status = 200, origin: string): Response =
 const validateEnvironment = (): Environment => {
   const env = {
     LINE_CHANNEL_ID: Deno.env.get('LINE_CHANNEL_ID'),
-    EDGE_FUNCTION_JWT: Deno.env.get('EDGE_FUNCTION_JWT'),
     SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
     SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
   };
@@ -123,45 +109,6 @@ const verifyLineIdToken = async (idToken: string, channelId: string): Promise<Li
   }
 };
 
-// ハンズオン2-4: Supabase JWT トークン生成
-// LINE認証情報を基にSupabaseで使用するJWTトークンを生成
-const generateJwtTokens = async (user: User, jwtSecret: string): Promise<Session> => {
-  try {
-    const now = Math.floor(Date.now() / 1000);
-
-    const customClaims = {
-      sub: user.id,
-      aud: 'authenticated',
-      role: 'authenticated',
-      email: user.email,
-      user_metadata: user.user_metadata
-    };
-
-    const accessToken = await new jose.SignJWT(customClaims)
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime(JWT_CONFIG.ACCESS_TOKEN_EXPIRY)
-      .sign(new TextEncoder().encode(jwtSecret));
-
-    const refreshToken = await new jose.SignJWT({
-      sub: user.id,
-      type: 'refresh'
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime(JWT_CONFIG.REFRESH_TOKEN_EXPIRY)
-      .sign(new TextEncoder().encode(jwtSecret));
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_in: JWT_CONFIG.EXPIRES_IN_SECONDS,
-      expires_at: now + JWT_CONFIG.EXPIRES_IN_SECONDS
-    };
-  } catch (error) {
-    throw new ApiError(500, `Error generating JWT: ${error.message}`);
-  }
-};
 
 // ハンズオン3-3: Supabase ユーザー管理
 // LINE ユーザー情報をSupabaseのユーザーテーブルと連携
@@ -169,10 +116,16 @@ class UserManager {
   constructor(private supabase: SupabaseClient) {}
 
   async findUserByLineId(lineUserId: string): Promise<User | null> {
-    const { data: { users }, error } = await this.supabase.auth.admin.listUsers();
-    if (error) throw new ApiError(500, `Error listing users: ${error.message}`);
-
-    return users.find(u => u.user_metadata?.liff_user_id === lineUserId) || null;
+    // より効率的な検索: メールアドレスで直接検索
+    const email = `${lineUserId}@line.user`;
+    const { data: { users }, error } = await this.supabase.auth.admin.listUsers({
+      email: email,
+      limit: 1
+    });
+    
+    if (error) throw new ApiError(500, `Error finding user: ${error.message}`);
+    
+    return users.length > 0 ? users[0] : null;
   }
 
   async updateUser(userId: string, lineProfile: LineProfile): Promise<User> {
@@ -211,6 +164,14 @@ class UserManager {
         providers: ['line']
       }
     });
+
+    // ユーザーが既に存在する場合は再検索して返す
+    if (error?.message?.includes('already been registered')) {
+      const existingUser = await this.findUserByLineId(lineProfile.sub);
+      if (existingUser) {
+        return await this.updateUser(existingUser.id, lineProfile);
+      }
+    }
 
     if (error || !user) throw new ApiError(500, `Error creating user: ${error?.message}`);
     return user;
@@ -256,15 +217,39 @@ const handleRequest = async (req: Request): Promise<Response> => {
       ? await userManager.updateUser(existingUser.id, lineProfile)
       : await userManager.createUser(lineProfile);
 
-    // ハンズオン2-4: Supabaseセッション生成
-    const session = await generateJwtTokens(user, env.EDGE_FUNCTION_JWT);
+    // Supabase Auth APIでセッションを作成
+    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateAccessToken(user.id);
+    
+    if (sessionError || !sessionData) {
+      console.warn('Access token generation failed, using basic response');
+      // フォールバック: ユーザー情報のみ返す
+      const response = {
+        user: {
+          id: user.id,
+          email: user.email,
+          user_metadata: user.user_metadata,
+          aud: 'authenticated',
+          role: 'authenticated'
+        }
+      };
+      return createResponse(response, 200, origin);
+    }
 
-    const response: UserResponse = {
-      session,
+    // 正しいセッション情報を返す
+    const response = {
+      session: {
+        access_token: sessionData.access_token,
+        refresh_token: sessionData.refresh_token || `refresh_${user.id}`,
+        expires_in: sessionData.expires_in || 3600,
+        expires_at: Math.floor(Date.now() / 1000) + (sessionData.expires_in || 3600),
+        token_type: 'bearer'
+      },
       user: {
         id: user.id,
         email: user.email,
-        user_metadata: user.user_metadata
+        user_metadata: user.user_metadata,
+        aud: 'authenticated',
+        role: 'authenticated'
       }
     };
 

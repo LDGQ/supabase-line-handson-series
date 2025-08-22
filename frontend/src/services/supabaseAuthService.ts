@@ -1,4 +1,4 @@
-// ハンズオン2-4: Supabase 認証サービス
+// Supabase 認証サービス
 // LIFF ID トークンを使用したSupabase認証の管理
 import { AuthError as SupabaseAuthError, User } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
@@ -28,21 +28,17 @@ export class SupabaseAuthService {
 
   // Get系メソッド
   async getCurrentUser(): Promise<User | null> {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error) {
-        // セッションが存在しない場合は正常な状態として扱う
-        if (error.message.includes('Auth session missing')) {
-          return null;
-        }
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error) {
+      // セッションが存在しない場合は正常な状態として扱う
+      if (error.message.includes('Auth session missing')) {
         return null;
       }
-      
-      return user;
-    } catch {
       return null;
     }
+
+    return user;
   }
 
   async getSession(): Promise<SessionResult> {
@@ -57,12 +53,12 @@ export class SupabaseAuthService {
     }
   }
 
-  // ハンズオン2-4: LINE ID トークンでのログイン
+  // LINE ID トークンでのログイン
   // Edge Function (line-liff-auth) を呼び出してSupabaseセッションを作成
   async signInWithIdToken(idToken: string): Promise<SignInResult> {
     try {
       const requestBody = { id_token: idToken };
-      
+
       const { data, error } = await supabase.functions.invoke('line-liff-auth', {
         body: requestBody
       });
@@ -72,20 +68,30 @@ export class SupabaseAuthService {
         return { data: { user: null }, error: enhancedError };
       }
 
-      if (data?.session) {
-        const sessionResult = await this.setSession(data.session);
-        if (sessionResult.error) {
-          return { data: { user: null }, error: sessionResult.error };
+      // セッション情報を使ってSupabaseセッションを確立
+      if (data?.session && data?.user) {
+        const sessionData = data.session;
+        const userData = data.user as User;
+
+
+        // 正式なセッションを設定
+        const { error: sessionError } = await supabase.auth.setSession(sessionData);
+
+        if (sessionError && sessionError.message.includes('Invalid JWT')) {
+          await this.setAuthUser(userData);
         }
+
+        return { data: { user: userData }, error: null };
       }
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      if (userError) {
-        return { data: { user: null }, error: userError };
+      // フォールバック: ユーザー情報のみの場合
+      if (data?.user) {
+        const userData = data.user as User;
+        await this.setAuthUser(userData);
+        return { data: { user: userData }, error: null };
       }
 
-      return { data: { user }, error: null };
+      return { data: { user: null }, error: new Error('User data not found in response') as SupabaseAuthError };
     } catch (err) {
       const error = err instanceof Error ? err : new Error('LINE認証に失敗しました');
       return {
@@ -102,8 +108,8 @@ export class SupabaseAuthService {
       if (error) {
         throw new AuthError(`ログアウトに失敗しました: ${error.message}`, error.status?.toString());
       }
-      
-      // ログアウト後にキャッシュをクリア
+
+      // ログアウト後にグローバル変数をクリア
       this.clearAuthCache();
     } catch (err) {
       throw new AuthError(
@@ -113,54 +119,30 @@ export class SupabaseAuthService {
   }
 
   // Set系メソッド
-  private async setSession(session: { access_token: string; refresh_token: string }): Promise<{ error: SupabaseAuthError | null }> {
-    try {
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token
+  private async setAuthUser(userData: User): Promise<void> {
+    // ユーザー情報はAuthContextで管理されるため、ここでは設定しない
+
+
+    // LINEユーザー情報を取得
+    const liff = await import('@line/liff');
+    const profile = await liff.default.getProfile();
+
+    // public.usersテーブルにユーザー情報を挿入/更新
+    const { error: upsertError } = await supabase
+      .from('users')
+      .upsert({
+        id: userData.id,
+        line_user_id: profile.userId,
+        display_name: profile.displayName,
+        avatar_url: profile.pictureUrl
+      }, {
+        onConflict: 'id'
       });
-
-      if (sessionError) {
-        return { error: sessionError };
-      }
-
-      return { error: null };
-    } catch (error) {
-      return { 
-        error: new SupabaseAuthError(
-          error instanceof Error ? error.message : 'セッション設定に失敗しました'
-        ) 
-      };
-    }
   }
 
-  // キャッシュクリアメソッド
+  // ログアウト時のクリア処理
   private clearAuthCache(): void {
-    console.log('Supabase認証キャッシュクリア開始');
-    
-    try {
-      // Supabase関連のlocalStorageをクリア
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.includes('supabase') ||
-          key.includes('sb-') ||
-          key.startsWith('supabase.')
-        )) {
-          keysToRemove.push(key);
-        }
-      }
-      
-      keysToRemove.forEach(key => {
-        console.log('Supabase localStorage削除:', key);
-        localStorage.removeItem(key);
-      });
-      
-      console.log('Supabase認証キャッシュクリア完了');
-    } catch (error) {
-      console.error('Supabaseキャッシュクリアエラー:', error);
-    }
+    // AuthContextで管理されるため、ここでは何もしない
   }
 
   // ユーティリティメソッド
@@ -168,23 +150,23 @@ export class SupabaseAuthService {
     // 型ガードでエラーオブジェクトをチェック
     if (error && typeof error === 'object' && 'message' in error) {
       const errorMessage = error.message;
-      
+
       // 新しいエラーレスポンス形式（code: 'TOKEN_EXPIRED'）
       if (typeof errorMessage === 'object' && errorMessage && 'code' in errorMessage && errorMessage.code === 'TOKEN_EXPIRED') {
         return new SupabaseAuthError('IDトークンが期限切れです');
       }
-      
+
       // 従来のエラーメッセージ形式
       if (typeof errorMessage === 'string' && errorMessage.includes('IdToken expired')) {
         return new SupabaseAuthError('IDトークンが期限切れです');
       }
-      
+
       // Edge Functionから返されるエラーレスポンス形式
       if (typeof errorMessage === 'object' && errorMessage && 'error' in errorMessage && errorMessage.error === 'ID_TOKEN_EXPIRED') {
         return new SupabaseAuthError('IDトークンが期限切れです');
       }
     }
-    
+
     return new SupabaseAuthError('認証エラーが発生しました');
   }
 }

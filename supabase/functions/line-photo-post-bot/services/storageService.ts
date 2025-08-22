@@ -21,26 +21,26 @@ export async function uploadImage(lineUserId: string, messageId: string): Promis
       },
     );
     if (!contentRes.ok) return null;
-    
+
     // バイナリデータとファイル情報の準備
     const buffer = await contentRes.arrayBuffer();
     const mime = contentRes.headers.get("content-type") ?? "image/jpeg";
     const ext = mime.split("/")[1] || "jpg";
     const fileName = `${messageId}.${ext}`;
     const objectPath = `${lineUserId}/${fileName}`;
-    
+
     // Supabase Storage にアップロード
     const { error: uploadErr } = await supabaseAdmin.storage
-      .from(env.IMAGE_BUCKET)
+      .from('post-images')
       .upload(objectPath, buffer, { contentType: mime, upsert: true });
     if (uploadErr) {
       console.error("storage upload error", uploadErr);
       return null;
     }
-    
+
     // 署名付き URL の生成（7日間有効）
     const { data: signed } = await supabaseAdmin.storage
-      .from(env.IMAGE_BUCKET)
+      .from('post-images')
       .createSignedUrl(objectPath, 60 * 60 * 24 * 7);
     return signed?.signedUrl || null;
   } catch (e) {

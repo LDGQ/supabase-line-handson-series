@@ -3,12 +3,7 @@ import { AuthProvider } from './IAuthProvider';
 import { LiffService, LiffConfig } from '../liffService';
 import { SupabaseAuthService } from '../supabaseAuthService';
 import { AppError, AuthError } from '../../lib/error';
-
-export interface AuthResult {
-  success: boolean;
-  user?: User;
-  error?: AuthError;
-}
+import { AuthResult } from '../../types/auth';
 
 export class LineAuthProvider implements AuthProvider {
   private static instance: LineAuthProvider;
@@ -37,20 +32,15 @@ export class LineAuthProvider implements AuthProvider {
 
   // Get系メソッド
   async isLoggedIn(): Promise<boolean> {
-    try {
-      const liffLoggedIn = await this.liffService.isLoggedIn();
+    const liffLoggedIn = await this.liffService.isLoggedIn();
 
-      if (!liffLoggedIn) {
-        return false;
-      }
-
-      // LIFFがログイン状態の場合は、セッション確立を1回のみ試行
-      const result = await this.attemptSessionEstablishment();
-      return result.success;
-    } catch (error) {
-      console.error('isLoggedIn エラー:', error);
+    if (!liffLoggedIn) {
       return false;
     }
+
+    // LIFFがログイン状態の場合は、セッション確立を1回のみ試行
+    const result = await this.attemptSessionEstablishment();
+    return result.success;
   }
 
   // Login/Logout系メソッド

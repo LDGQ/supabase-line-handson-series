@@ -1,0 +1,21 @@
+{
+  "name": "fukuoka-supabase-base-handson",
+  "version": "1.0.0",
+  "description": "Supabase基礎操作ハンズオン",
+  "main": "index.js",
+  "scripts": {
+    "example:basic-crud": "tsx examples/basic-crud.ts",
+    "dev": "tsx --watch examples/basic-crud.ts"
+  },
+  "keywords": ["supabase", "handson", "typescript"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0"
+  }
+} 
