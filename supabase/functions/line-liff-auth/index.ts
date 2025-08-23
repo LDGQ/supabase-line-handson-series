@@ -116,16 +116,13 @@ class UserManager {
   constructor(private supabase: SupabaseClient) {}
 
   async findUserByLineId(lineUserId: string): Promise<User | null> {
-    // より効率的な検索: メールアドレスで直接検索
-    const email = `${lineUserId}@line.user`;
-    const { data: { users }, error } = await this.supabase.auth.admin.listUsers({
-      email: email,
-      limit: 1
-    });
+    // RPC関数を使用してデータベースクエリで検索
+    const { data, error } = await this.supabase
+      .rpc('find_user_by_line_id', { line_user_id: lineUserId });
     
     if (error) throw new ApiError(500, `Error finding user: ${error.message}`);
     
-    return users.length > 0 ? users[0] : null;
+    return data && data.length > 0 ? data[0] : null;
   }
 
   async updateUser(userId: string, lineProfile: LineProfile): Promise<User> {
@@ -212,18 +209,66 @@ const handleRequest = async (req: Request): Promise<Response> => {
     // ハンズオン3-3: ユーザー作成・更新処理
     const userManager = new UserManager(supabase);
     const existingUser = await userManager.findUserByLineId(lineProfile.sub);
-    
+    console.log({existingUser, lineProfile})
     const user = existingUser
       ? await userManager.updateUser(existingUser.id, lineProfile)
       : await userManager.createUser(lineProfile);
 
-    // Supabase Auth APIでセッションを作成
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateAccessToken(user.id);
+    // JWT ベースの認証に変更
+    // サービスロールキーを使用してJWTを生成
+    const now = Math.floor(Date.now() / 1000);
+    const expiresIn = 3600; // 1時間
+    const expiresAt = now + expiresIn;
+
+    const payload = {
+      aud: 'authenticated',
+      exp: expiresAt,
+      iat: now,
+      iss: 'supabase',
+      sub: user.id,
+      email: user.email,
+      phone: '',
+      app_metadata: user.app_metadata,
+      user_metadata: user.user_metadata,
+      role: 'authenticated',
+      aal: 'aal1',
+      amr: [{ method: 'oauth', timestamp: now }],
+      session_id: crypto.randomUUID()
+    };
+
+    // JWTトークンを手動で作成（UTF-8対応）
+    const encoder = new TextEncoder();
+    const header = btoa(String.fromCharCode(...encoder.encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))));
+    const payloadEncoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(payload))));
     
-    if (sessionError || !sessionData) {
-      console.warn('Access token generation failed, using basic response');
-      // フォールバック: ユーザー情報のみ返す
-      const response = {
+    // サービスロールキーの最初の部分をシークレットとして使用
+    const secret = env.SUPABASE_SERVICE_ROLE_KEY.split('.')[1] || env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    // HMAC SHA256署名（簡易実装）
+    const data = encoder.encode(`${header}.${payloadEncoded}`);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, data);
+    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
+    const accessToken = `${header}.${payloadEncoded}.${signatureBase64}`;
+
+    // レスポンス作成
+    const response = {
+      session: {
+        access_token: accessToken,
+        refresh_token: `refresh_${user.id}`,
+        expires_in: expiresIn,
+        expires_at: expiresAt,
+        token_type: 'bearer',
         user: {
           id: user.id,
           email: user.email,
@@ -231,18 +276,6 @@ const handleRequest = async (req: Request): Promise<Response> => {
           aud: 'authenticated',
           role: 'authenticated'
         }
-      };
-      return createResponse(response, 200, origin);
-    }
-
-    // 正しいセッション情報を返す
-    const response = {
-      session: {
-        access_token: sessionData.access_token,
-        refresh_token: sessionData.refresh_token || `refresh_${user.id}`,
-        expires_in: sessionData.expires_in || 3600,
-        expires_at: Math.floor(Date.now() / 1000) + (sessionData.expires_in || 3600),
-        token_type: 'bearer'
       },
       user: {
         id: user.id,
