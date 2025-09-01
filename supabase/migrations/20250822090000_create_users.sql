@@ -27,3 +27,10 @@ create policy "Users can insert themselves" on public.users
 create policy "Users can update themselves" on public.users
   for update using (id = auth.uid())
   with check (id = auth.uid());
+
+-- 4. service_roleがすべての操作を実行できるポリシーを追加
+create policy "Service role full access" on public.users
+  for all
+  to service_role
+  using (true)
+  with check (true);

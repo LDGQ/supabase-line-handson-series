@@ -16,7 +16,7 @@ interface LineProfile {
 interface Environment {
   LINE_CHANNEL_ID: string;
   SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;        // 新しいSecret Key
 }
 
 interface UserResponse {
@@ -37,7 +37,6 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-
 // ユーティリティ関数
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -46,16 +45,21 @@ class ApiError extends Error {
   }
 }
 
-const getCorsHeaders = (origin: string): Record<string, string> => ({
-  ...CORS_HEADERS,
-  'Access-Control-Allow-Origin': origin
-});
+const getCorsHeaders = (origin: string): Record<string, string> => {
+  const isGithubDevOrigin = origin.includes('.app.github.dev')
+  const isAllowedOrigin = isGithubDevOrigin;
+
+  return {
+    ...CORS_HEADERS,
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : allowedOrigins[0]
+  };
+};
 
 const createResponse = (data: unknown, status = 200, origin: string): Response => {
   return new Response(
     JSON.stringify(data),
-    { 
-      status, 
+    {
+      status,
       headers: {
         ...getCorsHeaders(origin),
         'Cache-Control': 'no-store'
@@ -72,12 +76,17 @@ const validateEnvironment = (): Environment => {
     SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
   };
 
-  const missing = Object.entries(env)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
+  // 必須の環境変数をチェック
+  const requiredVars = ['LINE_CHANNEL_ID', 'SUPABASE_URL'];
+  const missing = requiredVars.filter(key => !env[key as keyof typeof env]);
 
   if (missing.length > 0) {
     throw new ApiError(500, `Missing required environment variables: ${missing.join(', ')}`);
+  }
+
+  // Supabaseキーは新しいものか従来のものかどちらかが必要
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new ApiError(500, 'SUPABASE_SERVICE_ROLE_KEY is required');
   }
 
   return env as Environment;
@@ -119,9 +128,9 @@ class UserManager {
     // RPC関数を使用してデータベースクエリで検索
     const { data, error } = await this.supabase
       .rpc('find_user_by_line_id', { line_user_id: lineUserId });
-    
+
     if (error) throw new ApiError(500, `Error finding user: ${error.message}`);
-    
+
     return data && data.length > 0 ? data[0] : null;
   }
 
@@ -187,7 +196,7 @@ const handleRequest = async (req: Request): Promise<Response> => {
   try {
     const env = validateEnvironment();
     const body = await req.json().catch(() => null);
-    
+
     if (!body?.id_token) {
       throw new ApiError(400, 'Request body must contain id_token');
     }
@@ -195,9 +204,12 @@ const handleRequest = async (req: Request): Promise<Response> => {
     // ハンズオン2-4: LINE IDトークンの検証
     const lineProfile = await verifyLineIdToken(body.id_token, env.LINE_CHANNEL_ID);
 
+    // 新しいSecret Keyがあれば使用、なければ従来のService Role Keyを使用
+    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
     const supabase = createClient(
       env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -209,7 +221,6 @@ const handleRequest = async (req: Request): Promise<Response> => {
     // ハンズオン3-3: ユーザー作成・更新処理
     const userManager = new UserManager(supabase);
     const existingUser = await userManager.findUserByLineId(lineProfile.sub);
-    console.log({existingUser, lineProfile})
     const user = existingUser
       ? await userManager.updateUser(existingUser.id, lineProfile)
       : await userManager.createUser(lineProfile);
@@ -240,10 +251,10 @@ const handleRequest = async (req: Request): Promise<Response> => {
     const encoder = new TextEncoder();
     const header = btoa(String.fromCharCode(...encoder.encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))));
     const payloadEncoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(payload))));
-    
+
     // サービスロールキーの最初の部分をシークレットとして使用
-    const secret = env.SUPABASE_SERVICE_ROLE_KEY.split('.')[1] || env.SUPABASE_SERVICE_ROLE_KEY;
-    
+    const secret = env.SUPABASE_SERVICE_ROLE_KEY;
+
     // HMAC SHA256署名（簡易実装）
     const data = encoder.encode(`${header}.${payloadEncoded}`);
     const key = await crypto.subtle.importKey(
@@ -296,4 +307,4 @@ const handleRequest = async (req: Request): Promise<Response> => {
   }
 };
 
-serve(handleRequest); 
+serve(handleRequest);
